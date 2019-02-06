@@ -1,20 +1,24 @@
 import os
 import pygame
-
+import random
 import sys
 
 pygame.init()
 FPS = 50
 fps = 10
+
 clock = pygame.time.Clock()
 size = WIDTH, HEIGHT = 300, 500
 screen = pygame.display.set_mode(size)
 running = True
 rule_group = pygame.sprite.Group()
+
 play_group = pygame.sprite.Group()
 start_button = pygame.draw.rect(screen, (0, 0, 240), (25, 130, 245, 50))
 pygame.display.flip()
 all_sprites = pygame.sprite.Group()
+
+
 
 
 def load_image(name, colorkey=None):
@@ -90,6 +94,7 @@ class Play_button(pygame.sprite.Sprite):
 
 
 class AnimatedSprite(pygame.sprite.Sprite):
+
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
         self.frames = []
@@ -111,12 +116,30 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
 
 
+class Fense(pygame.sprite.Sprite):
+    def __init__(self, x, y, name):
+        image = pygame.transform.scale(load_image(name), (300, 85))
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect()
+        # вычисляем маску для эффективного сравнения
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self):
+        self.rect = self.rect.move(0, 3)
+
+
 def game_screen():
     screen = pygame.display.set_mode(size)
     running = True
+    fenses = ["black_fense.png", "green_fense.png", "white_fense.png"]
     x = 125
+    count = 0
     screen.blit(load_image("game_fon.png"), (0, 0))
-    black_chicken = AnimatedSprite(load_image("black_chicken.png"), 3, 1, 125, 400)
+
+    black_chicken = AnimatedSprite(load_image("black_chicken.png"), 3, 1, 113, 400)
+    chicken_group = pygame.sprite.Group(black_chicken)
     while running:
         screen.blit(load_image("game_fon.png"), (0, 0))
         for event in pygame.event.get():
@@ -129,11 +152,16 @@ def game_screen():
             if keys_pressed[pygame.K_RIGHT]:
                 if (black_chicken.rect[0] + 100) < WIDTH:
                     black_chicken.rect[0] += 100
-
-        all_sprites.draw(screen)
+        if count == 20:
+            random_fense = Fense(0, -85, random.choice(fenses))
+            fense_group = pygame.sprite.Group(random_fense)
+            count = 0
+        black_chicken.update()
+        chicken_group.draw(screen)
         all_sprites.update()
         pygame.display.flip()
         clock.tick(fps)
+        count += 1
 
     pygame.quit()
 
