@@ -12,7 +12,7 @@ screen = pygame.display.set_mode(size)
 running = True
 rule_group = pygame.sprite.Group()
 play_group = pygame.sprite.Group()
-start_button = pygame.draw.rect(screen,(0, 0, 240),(25, 130, 245, 50))
+start_button = pygame.draw.rect(screen, (0, 0, 240), (25, 130, 245, 50))
 pygame.display.flip()
 all_sprites = pygame.sprite.Group()
 
@@ -97,15 +97,15 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y)
-     
+
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns, sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
                 self.frames.append(sheet.subsurface(pygame.Rect(
-                        frame_location, self.rect.size)))
-     
+                    frame_location, self.rect.size)))
+
     def update(self):
         self.cur_frame = (self.cur_frame + 1) % len(self.frames)
         self.image = self.frames[self.cur_frame]
@@ -134,32 +134,33 @@ def game_screen():
         all_sprites.update()
         pygame.display.flip()
         clock.tick(fps)
-            
+
     pygame.quit()
 
 
 def rule_screen():
-            screen = pygame.display.set_mode(size)
-            running = True
-            intro_text = ["Правила игры", 'Назад']
-            fon = pygame.transform.scale(load_image('rule_fon.jpg'), (WIDTH, HEIGHT))
-            screen.blit(fon, (0, 0))
-            back_button = BackButton(250, 50, intro_text[1], 25, 440)
-            all_sprites.draw(screen)
-            pygame.display.flip()
-            while True:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        terminate()
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if back_button.check_click(event.pos):
-                            print("clicked")
-                            back_button.kill()
-                            start_screen()
-                        else:
-                            pass
-                pygame.display.flip()
-                clock.tick(FPS)
+    screen = pygame.display.set_mode(size)
+    running = True
+    intro_text = ["Правила игры", 'Назад']
+    fon = pygame.transform.scale(load_image('rule_fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    back_button = BackButton(250, 50, intro_text[1], 25, 440)
+    all_sprites.draw(screen)
+    pygame.display.flip()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.check_click(event.pos):
+                    print("clicked")
+                    back_button.kill()
+                    start_screen()
+                else:
+                    pass
+        pygame.display.flip()
+        clock.tick(FPS)
+
 
 def start_screen():
     intro_text = ["COLOR ROAD", "",
