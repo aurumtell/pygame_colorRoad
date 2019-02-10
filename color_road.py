@@ -13,6 +13,7 @@ size = WIDTH, HEIGHT = 300, 400
 screen = pygame.display.set_mode(size)
 running = True
 rule_group = pygame.sprite.Group()
+lose_group = pygame.sprite.Group()
 play_group = pygame.sprite.Group()
 exit_group = pygame.sprite.Group()
 start_button = pygame.draw.rect(screen, (0, 0, 240), (25, 130, 245, 50))
@@ -37,13 +38,13 @@ def terminate():
 
 class BackButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
-        super().__init__(rule_group, all_sprites)
+        super().__init__(rule_group, lose_group, all_sprites)
         self.image = pygame.Surface([width, height])
         self.image.fill(pygame.Color("lightskyblue"))
         font = pygame.font.Font(None, 50)
         text = font.render(title, 1, (255, 255, 255))
-        text_x = 65
-        text_y = 10
+        text_x = width // 2 - text.get_width() // 2
+        text_y = height // 2 - text.get_height() // 2
         self.image.blit(text, (text_x, text_y))
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -54,7 +55,7 @@ class BackButton(pygame.sprite.Sprite):
             return True
 
 
-class Rule_button(pygame.sprite.Sprite):
+class RuleButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
         super().__init__(rule_group, all_sprites)
         self.image = pygame.Surface([width, height])
@@ -73,15 +74,15 @@ class Rule_button(pygame.sprite.Sprite):
             return True
 
 
-class Play_button(pygame.sprite.Sprite):
+class PlayButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
-        super().__init__(play_group, all_sprites)
+        super().__init__(play_group, lose_group, all_sprites)
         self.image = pygame.Surface([width, height])
         self.image.fill(pygame.Color("lightskyblue"))
         font = pygame.font.Font(None, 50)
         text = font.render(title, 1, (255, 255, 255))
-        text_x = 65
-        text_y = 7
+        text_x = width // 2 - text.get_width() // 2
+        text_y = height // 2 - text.get_height() // 2
         self.image.blit(text, (text_x, text_y))
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -92,7 +93,7 @@ class Play_button(pygame.sprite.Sprite):
             return True
 
 
-class Exit_button(pygame.sprite.Sprite):
+class ExitButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
         super().__init__(play_group, all_sprites)
         self.image = pygame.Surface([width, height])
@@ -135,7 +136,7 @@ class AnimatedSprite(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
 
 
-class Fense(pygame.sprite.Sprite):
+class Fence(pygame.sprite.Sprite):
     def __init__(self, x, y, name):
         image = pygame.transform.scale(load_image(name), (300, 85))
         super().__init__(all_sprites)
@@ -173,11 +174,9 @@ class Egg(pygame.sprite.Sprite):
         self.rect = self.rect.move(0, 10)
         if pygame.sprite.collide_mask(self, chicken):
             if self.name[0] == chickens[chicken_color][0]:
-
-                print('collided')
                 self.kill()
-            # return self.name[0]
-            
+            else:
+                return False
         return self.rect.y
 
 
@@ -200,11 +199,11 @@ def game_screen():
     global chicken_color
     screen = pygame.display.set_mode(size)
     running = True
-    fenses = ["black_fense.png", "green_fense.png", "white_fense.png"]
+    fences = ["black_fense.png", "green_fense.png", "white_fense.png"]
     chickens = ["black_chicken.png", 'green_chicken.png', 'white_chicken.png']
     eggs = ["black_egg.png", "green_egg.png", "white_egg.png"]
     x = 125
-    fense_fox = False
+    fence_fox = False
     egg_fox = False
     chicken_color = 0
     screen.blit(load_image("game_fon.png"), (0, 0))
@@ -214,14 +213,12 @@ def game_screen():
     USEREVENT1 = 23
     pygame.time.set_timer(USEREVENT, 12000)
     pygame.time.set_timer(USEREVENT1, 3000)
-    # pygame.mixer.music.load('odmin/PycharmProjects/yandex/pygame/colorRoad/data/fon.wav')
     points = 0
     font = pygame.font.Font(None, 50)
     text = font.render(str(points), 1, (100, 255, 100))
     screen.blit(text, (10, 10))
     pygame.draw.rect(screen, (0, 255, 0), (0, 0, 5, 5))
     while running:
-        # pygame.mixer.music.play()
         screen.blit(load_image("game_fon.png"), (0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -237,20 +234,16 @@ def game_screen():
                 if (chicken.rect[0] + 100) < WIDTH:
                     chicken.rect[0] += 100
             if event.type == USEREVENT:
-                fense_fox = True
-                fense_color = random.randint(0, 2)
-                random_fense = Fense(0, -85, fenses[fense_color])
-                fense_group = pygame.sprite.Group(random_fense)
-                random_fense.update()
-                # if random_fense.update():
-                #     print(chicken_color)
-                #     black_chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
-                fense_group.update()
-                fense_group.draw(screen)
+                fence_fox = True
+                fence_color = random.randint(0, 2)
+                random_fence = Fence(0, -85, fences[fence_color])
+                fence_group = pygame.sprite.Group(random_fence)
+                random_fence.update()
+                fence_group.update()
+                fence_group.draw(screen)
 
             if event.type == USEREVENT1:
                 egg_fox = True
-                print("egg")
                 random.shuffle(eggs)
                 random_egg1 = Egg(0, -185, eggs[0])
                 random_egg2 = Egg(100, -185, eggs[1])
@@ -265,37 +258,74 @@ def game_screen():
                 egg_group2.draw(screen)
                 egg_group3.draw(screen)
         if egg_fox:
-            if random_egg2.update() > 500:
+            if random_egg1.update() > 500:
                 egg_fox = False
                 pygame.time.set_timer(USEREVENT1, 2600)
-            random_egg1.update()
+            if (random_egg1.update() is False) or (random_egg2.update() is False) or (random_egg3.update() is False):
+                lose_screen()
+            random_egg2.update()
             random_egg3.update()
             egg_group1.draw(screen)
             egg_group2.draw(screen)
             egg_group3.draw(screen)
 
-        if fense_fox:
-            if random_fense.update() > 550:
-                fense_fox = False
+        if fence_fox:
+            if random_fence.update() > 550:
+                fence_fox = False
                 pygame.time.set_timer(USEREVENT, 12000)
-            if random_fense.update() == True:
-                chicken_color = fense_color
+            if random_fence.update() == True:
+                chicken_color = fence_color
                 chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 300)
                 chicken_group = pygame.sprite.Group(chicken)
                 chicken_group.update()
-            random_fense.update()
-            fense_group.draw(screen)
+            random_fence.update()
+            fence_group.draw(screen)
             chicken.update()
             chicken_group.draw(screen)
-        if not fense_fox:
+        if not fence_fox:
             chicken.update()
             chicken_group.draw(screen)
         all_sprites.update()
         pygame.display.flip()
         clock.tick(fps)
-        # count += 1
-
     pygame.quit()
+
+
+def lose_screen():
+    screen = pygame.display.set_mode(size)
+    running = True
+    intro_text = ['Вы проиграли(', "Меню", 'Новая игра']
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 50)
+    text = font.render(intro_text[0], 1, (176, 226, 255))
+    text_x = 25
+    text_y = 30
+    screen.blit(text, (text_x, text_y))
+    back_button = BackButton(250, 50, intro_text[1], 25, 200)
+    new_button = PlayButton(250, 50, intro_text[2], 25, 280)
+    lose_group.draw(screen)
+    pygame.display.flip()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.check_click(event.pos):
+                    back_button.kill()
+                    new_button.kill()
+                    start_screen()
+                else:
+                    pass
+                if new_button.check_click(event.pos):
+                    new_button.kill()
+                    back_button.kill()
+                    game_screen()
+                else:
+                    pass
+
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def rule_screen():
@@ -334,9 +364,9 @@ def start_screen():
     text_x = 30
     text_y = 30
     screen.blit(text, (text_x, text_y))
-    rule_button = Rule_button(250, 50, intro_text[2], 20, 160)
-    play_button = Play_button(250, 50, intro_text[3], 20, 230)
-    exit_button = Exit_button(250, 50, intro_text[4], 20, 300)
+    rule_button = RuleButton(250, 50, intro_text[2], 20, 160)
+    play_button = PlayButton(250, 50, intro_text[3], 20, 230)
+    exit_button = ExitButton(250, 50, intro_text[4], 20, 300)
     exit_group.draw(screen)
     rule_group.draw(screen)
     play_group.draw(screen)
