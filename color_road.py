@@ -128,9 +128,12 @@ class Fense(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
+        self.rect = self.rect.move(0, 3)
         if pygame.sprite.collide_mask(self, chicken):
+            print('True')
             return True
-        return self.rect.y
+        else:
+            return self.rect.y
 
 
 chicken_color = 0
@@ -167,22 +170,28 @@ def game_screen():
                 fox = True
                 print("fense")
                 chicken_color = random.randint(0, 2)
-                random_fense = Fense(0, -185, fenses[chicken_color])
+                random_fense = Fense(0, -85, fenses[chicken_color])
                 fense_group = pygame.sprite.Group(random_fense)
                 random_fense.update()
                 # if random_fense.update():
+                #     print(chicken_color)
                 #     black_chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
+                fense_group.update()
                 fense_group.draw(screen)
 
         if fox:
             if random_fense.update() > 550:
                 fox = False
                 pygame.time.set_timer(USEREVENT, 12000)
+            if random_fense.update() == True:
+                chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
+                chicken_group = pygame.sprite.Group(chicken)
+                chicken_group.update()
             random_fense.update()
             fense_group.draw(screen)
             chicken.update()
             chicken_group.draw(screen)
-        if fox == False:
+        if not fox:
             chicken.update()
             chicken_group.draw(screen)
         all_sprites.update()
