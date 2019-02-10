@@ -9,7 +9,7 @@ fps = 10
 fenses = ["black_fense.png", "green_fense.png", "white_fense.png"]
 chickens = ["black_chicken.png", 'green_chicken.png', 'white_chicken.png']
 clock = pygame.time.Clock()
-size = WIDTH, HEIGHT = 300, 500
+size = WIDTH, HEIGHT = 300, 400
 screen = pygame.display.set_mode(size)
 running = True
 rule_group = pygame.sprite.Group()
@@ -136,8 +136,23 @@ class Fense(pygame.sprite.Sprite):
             return self.rect.y
 
 
+class Egg(pygame.sprite.Sprite):
+    def __init__(self, x, y, name):
+        image = pygame.transform.scale(load_image(name), (100, 85))
+        super().__init__(all_sprites)
+        self.image = image
+        self.rect = self.image.get_rect()
+        # вычисляем маску для эффективного сравнения
+        self.rect.x = x
+        self.rect.y = y
+
+    def update(self):
+        self.rect = self.rect.move(0, 7)
+        return self.rect.y
+
+
 chicken_color = 0
-chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
+chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 300)
 
 
 def game_screen():
@@ -145,15 +160,19 @@ def game_screen():
     running = True
     fenses = ["black_fense.png", "green_fense.png", "white_fense.png"]
     chickens = ["black_chicken.png", 'green_chicken.png', 'white_chicken.png']
+    eggs = ["black_egg.png", "green_egg.png", "white_egg.png"]
     x = 125
-    fox = False
+    fense_fox = False
+    egg_fox = False
     # count = 0
     chicken_color = 0
     screen.blit(load_image("game_fon.png"), (0, 0))
-    chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
+    chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 300)
     chicken_group = pygame.sprite.Group(chicken)
     USEREVENT = 31
+    USEREVENT1 = 23
     pygame.time.set_timer(USEREVENT, 12000)
+    pygame.time.set_timer(USEREVENT1, 5000)
     while running:
         screen.blit(load_image("game_fon.png"), (0, 0))
         for event in pygame.event.get():
@@ -167,7 +186,7 @@ def game_screen():
                 if (chicken.rect[0] + 100) < WIDTH:
                     chicken.rect[0] += 100
             if event.type == USEREVENT:
-                fox = True
+                fense_fox = True
                 print("fense")
                 chicken_color = random.randint(0, 2)
                 random_fense = Fense(0, -85, fenses[chicken_color])
@@ -179,19 +198,46 @@ def game_screen():
                 fense_group.update()
                 fense_group.draw(screen)
 
-        if fox:
+            if event.type == USEREVENT1:
+                egg_fox = True
+                print("egg")
+                random.shuffle(eggs)
+                random_egg1 = Egg(0, -185, eggs[0])
+                random_egg2 = Egg(100, -185, eggs[1])
+                random_egg3 = Egg(200, -185, eggs[2])
+                egg_group1 = pygame.sprite.Group(random_egg1)
+                egg_group2 = pygame.sprite.Group(random_egg2)
+                egg_group3 = pygame.sprite.Group(random_egg3)
+                random_egg1.update()
+                random_egg2.update()
+                random_egg3.update()
+                egg_group1.draw(screen)
+                egg_group2.draw(screen)
+                egg_group3.draw(screen)
+        if egg_fox:
+            if random_egg1.update() > 500:
+                egg_fox = False
+                pygame.time.set_timer(USEREVENT1, 5000)
+            # random_egg1.update()
+            random_egg2.update()
+            random_egg3.update()
+            egg_group1.draw(screen)
+            egg_group2.draw(screen)
+            egg_group3.draw(screen)
+
+        if fense_fox:
             if random_fense.update() > 550:
-                fox = False
+                fense_fox = False
                 pygame.time.set_timer(USEREVENT, 12000)
             if random_fense.update() == True:
-                chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 400)
+                chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 300)
                 chicken_group = pygame.sprite.Group(chicken)
                 chicken_group.update()
             random_fense.update()
             fense_group.draw(screen)
             chicken.update()
             chicken_group.draw(screen)
-        if not fox:
+        if not fense_fox:
             chicken.update()
             chicken_group.draw(screen)
         all_sprites.update()
