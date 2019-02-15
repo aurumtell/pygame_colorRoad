@@ -46,10 +46,17 @@ def load_image(name, colorkey=None):
         raise SystemExit(message)
 
 
-# def change_level(level):
-#     font = pygame.font.Font(None, 50)
-#     text = font.render('L' + ' ' + str(level), 1, (0, 0, 0))
-#     screen.blit(text, (80, 80))
+def nole_results():
+    filenames = ['record.txt', 'move.txt', 'level.txt']
+    for file in filenames:
+        if file == 'move.txt':
+            filename = "data/" + file
+            f = open(filename, 'w')
+            data = f.write(str(8))
+        else:
+            filename = "data/" + file
+            f = open(filename, 'w')
+            data = f.write(str(0))
 
 
 def terminate():
@@ -60,6 +67,24 @@ def terminate():
 class BackButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
         super().__init__(rule_group, lose_group, all_sprites)
+        self.image = pygame.Surface([width, height])
+        self.image.fill(pygame.Color("lightskyblue"))
+        font = pygame.font.Font(None, 50)
+        text = font.render(title, 1, (255, 255, 255))
+        text_x = width // 2 - text.get_width() // 2
+        text_y = height // 2 - text.get_height() // 2
+        self.image.blit(text, (text_x, text_y))
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def check_click(self, mouse):
+        if self.rect.collidepoint(mouse):
+            return True
+
+class NoleButton(pygame.sprite.Sprite):
+    def __init__(self, width, height, title, x, y):
+        super().__init__(lose_group, all_sprites)
         self.image = pygame.Surface([width, height])
         self.image.fill(pygame.Color("lightskyblue"))
         font = pygame.font.Font(None, 50)
@@ -162,7 +187,6 @@ class AnimatedSprite(pygame.sprite.Sprite):
         return self.x, self.y
 
 
-
 class Fence(pygame.sprite.Sprite):
     def __init__(self, x, y, name):
         image = pygame.transform.scale(load_image(name), (300, 85))
@@ -212,7 +236,6 @@ class Egg(pygame.sprite.Sprite):
         return self.rect.y
 
 
-
 chicken_color = 0
 chicken = AnimatedSprite(load_image(chickens[chicken_color]), 3, 1, 113, 300)
 fences = ["black_fense.png", "green_fense.png", "white_fense.png"]
@@ -241,6 +264,7 @@ def game_screen():
     end_sound = pygame.mixer.Sound('data/end_sound.wav')
     fense_sound = pygame.mixer.Sound('data/fense_sound.wav')
     start_sound = pygame.mixer.Sound('data/start_sound.wav')
+    win_sound = pygame.mixer.Sound('data/win_sound.wav')
     start_sound.play()
     level = int(load_file('level.txt'))
     screen = pygame.display.set_mode(size)
@@ -265,12 +289,13 @@ def game_screen():
     pygame.mixer.music.play()
     pygame.mixer.music.set_volume(0.5)
     while running:
+        screen.blit(load_image("game_fon.png"), (0, 0))
         font = pygame.font.Font(None, 50)
         points_text = font.render(str(points), 1, (0, 0, 0))
-        screen.blit(load_image("game_fon.png"), (0, 0))
         screen.blit(points_text, (10, 10))
         level_text = font.render('L' + ' ' + str(level), 1, (0, 0, 0))
         screen.blit(level_text, (250, 10))
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -311,11 +336,14 @@ def game_screen():
             if event.type == USEREVENT2:
                 movement += 2
                 level += 1
+                if level % 2 == 0:
+                    points += 30
+                    win_sound.play()
+                    points_text = font.render(str(points), 1, (0, 0, 0))
+                    screen.blit(points_text, (10, 10))
                 random_egg1.update()
                 random_egg2.update()
                 random_egg3.update()
-
-
         if egg_fox:
             if random_egg1.update() > 500:
                 egg_fox = False
@@ -326,13 +354,14 @@ def game_screen():
                 max_points = load_file('record.txt')
                 save_file('level.txt', level)
                 save_file('move.txt', movement)
-                print(max_points)
                 if points >= int(max_points):
                     max_points = points
                     save_file('record.txt', max_points)
                     lose_screen(max_points, max_points)
                 else:
+                    save_file('record.txt', max_points)
                     lose_screen(points, max_points)
+
 
             if (random_egg1.update() is True) or (random_egg2.update() is True) or (random_egg3.update() is True):
                 egg_sound.play()
@@ -371,7 +400,7 @@ def lose_screen(points, max_points):
     screen = pygame.display.set_mode(size)
     running = True
     intro_text = ['Вы проиграли(', 'Ваш рекорд' + ' ' + str(max_points), 'Вы набрали' + ' ' + str(points)]
-    button_text = ["Меню", 'Новая игра']
+    button_text = ["Меню", 'Играть', 'Новая игра']
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
@@ -384,8 +413,9 @@ def lose_screen(points, max_points):
         intro_rect.x = 20
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
-    back_button = BackButton(250, 50, button_text[0], 25, 200)
-    new_button = PlayButton(250, 50, button_text[1], 25, 280)
+    back_button = BackButton(250, 40, button_text[0], 25, 200)
+    new_button = PlayButton(250, 40, button_text[1], 25, 270)
+    nole_button = NoleButton(250, 40, button_text[2], 25, 340)
     lose_group.draw(screen)
     pygame.display.flip()
     while True:
@@ -396,13 +426,24 @@ def lose_screen(points, max_points):
                 if back_button.check_click(event.pos):
                     back_button.kill()
                     new_button.kill()
+                    nole_button.kill()
                     start_screen()
                 else:
                     pass
                 if new_button.check_click(event.pos):
                     new_button.kill()
                     back_button.kill()
+                    nole_button.kill()
                     game_screen()
+                else:
+                    pass
+
+                if nole_button.check_click(event.pos):
+                    nole_results()
+                    new_button.kill()
+                    back_button.kill()
+                    nole_button.kill()
+                    start_screen()
                 else:
                     pass
 
