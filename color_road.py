@@ -7,8 +7,6 @@ pygame.init()
 FPS = 50
 fps = 10
 points = 0
-count = 0
-levels = {0:[3,10], 1:[5,3]}
 fenses = ["black_fense.png", "green_fense.png", "white_fense.png"]
 chickens = ["black_chicken.png", 'green_chicken.png', 'white_chicken.png']
 clock = pygame.time.Clock()
@@ -24,6 +22,20 @@ pygame.display.flip()
 all_sprites = pygame.sprite.Group()
 
 
+
+def load_file(filename):
+    filename = "data/" + filename
+    f = open(filename, encoding="utf8")
+    data = f.read()
+    return data
+
+
+def save_file(filename, number):
+    filename = "data/" + filename
+    f = open(filename, 'w')
+    data = f.write(str(number))
+
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     try:
@@ -32,6 +44,12 @@ def load_image(name, colorkey=None):
     except pygame.error as message:
         print('Cannot load image:', name)
         raise SystemExit(message)
+
+
+# def change_level(level):
+#     font = pygame.font.Font(None, 50)
+#     text = font.render('L' + ' ' + str(level), 1, (0, 0, 0))
+#     screen.blit(text, (80, 80))
 
 
 def terminate():
@@ -167,10 +185,9 @@ class Fence(pygame.sprite.Sprite):
 
 
 class Egg(pygame.sprite.Sprite):
-    def __init__(self, x, y, name,count):
+    def __init__(self, x, y, name):
         image = pygame.transform.scale(load_image(name), (100, 85))
         super().__init__(all_sprites)
-        self.count = count
         self.image = image
         self.name = name
         self.rect = self.image.get_rect()
@@ -180,9 +197,9 @@ class Egg(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        global chicken_color, points
+        global chicken_color, movement
         global chicken, random_fence
-        self.rect = self.rect.move(0, levels[count][1])
+        self.rect = self.rect.move(0, movement)
         if pygame.sprite.collide_mask(self, chicken):
             if self.name[0] == chickens[chicken_color][0]:
                 self.kill()
@@ -217,15 +234,15 @@ def pause():
 
 
 def game_screen():
-    global chicken, points
+    global chicken, points, movement
     global chicken_color
     pygame.mixer.music.load('data/fon1.mp3')
-
+    movement = int(load_file('move.txt'))
     end_sound = pygame.mixer.Sound('data/end_sound.wav')
     fense_sound = pygame.mixer.Sound('data/fense_sound.wav')
     start_sound = pygame.mixer.Sound('data/start_sound.wav')
     start_sound.play()
-    count = 0
+    level = int(load_file('level.txt'))
     screen = pygame.display.set_mode(size)
     running = True
     fences = ["black_fense.png", "green_fense.png", "white_fense.png"]
@@ -240,18 +257,20 @@ def game_screen():
     chicken_group = pygame.sprite.Group(chicken)
     USEREVENT = 31
     USEREVENT1 = 23
+    USEREVENT2 = 30
     pygame.time.set_timer(USEREVENT, 12000)
     pygame.time.set_timer(USEREVENT1, 3000)
+    pygame.time.set_timer(USEREVENT2, 30000)
     points = 0
     pygame.mixer.music.play()
     pygame.mixer.music.set_volume(0.5)
     while running:
-        # if points==5:
-        #     count = 1
         font = pygame.font.Font(None, 50)
-        text = font.render(str(points), 1, (0, 0, 0))
+        points_text = font.render(str(points), 1, (0, 0, 0))
         screen.blit(load_image("game_fon.png"), (0, 0))
-        screen.blit(text, (10, 10))
+        screen.blit(points_text, (10, 10))
+        level_text = font.render('L' + ' ' + str(level), 1, (0, 0, 0))
+        screen.blit(level_text, (250, 10))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -277,9 +296,9 @@ def game_screen():
             if event.type == USEREVENT1:
                 egg_fox = True
                 random.shuffle(eggs)
-                random_egg1 = Egg(0, -185, eggs[0],count)
-                random_egg2 = Egg(100, -185, eggs[1],count)
-                random_egg3 = Egg(200, -185, eggs[2],count)
+                random_egg1 = Egg(0, -185, eggs[0])
+                random_egg2 = Egg(100, -185, eggs[1])
+                random_egg3 = Egg(200, -185, eggs[2])
                 egg_group1 = pygame.sprite.Group(random_egg1)
                 egg_group2 = pygame.sprite.Group(random_egg2)
                 egg_group3 = pygame.sprite.Group(random_egg3)
@@ -289,6 +308,14 @@ def game_screen():
                 egg_group1.draw(screen)
                 egg_group2.draw(screen)
                 egg_group3.draw(screen)
+            if event.type == USEREVENT2:
+                movement += 2
+                level += 1
+                random_egg1.update()
+                random_egg2.update()
+                random_egg3.update()
+
+
         if egg_fox:
             if random_egg1.update() > 500:
                 egg_fox = False
@@ -296,7 +323,16 @@ def game_screen():
             if (random_egg1.update() is False) or (random_egg2.update() is False) or (random_egg3.update() is False):
                 pygame.mixer.music.pause()
                 end_sound.play()
-                lose_screen()
+                max_points = load_file('record.txt')
+                save_file('level.txt', level)
+                save_file('move.txt', movement)
+                print(max_points)
+                if points >= int(max_points):
+                    max_points = points
+                    save_file('record.txt', max_points)
+                    lose_screen(max_points, max_points)
+                else:
+                    lose_screen(points, max_points)
 
             if (random_egg1.update() is True) or (random_egg2.update() is True) or (random_egg3.update() is True):
                 egg_sound.play()
@@ -331,19 +367,25 @@ def game_screen():
     pygame.quit()
 
 
-def lose_screen():
+def lose_screen(points, max_points):
     screen = pygame.display.set_mode(size)
     running = True
-    intro_text = ['Вы проиграли(', "Меню", 'Новая игра']
+    intro_text = ['Вы проиграли(', 'Ваш рекорд' + ' ' + str(max_points), 'Вы набрали' + ' ' + str(points)]
+    button_text = ["Меню", 'Новая игра']
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
-    text = font.render(intro_text[0], 1, (176, 226, 255))
-    text_x = 25
-    text_y = 30
-    screen.blit(text, (text_x, text_y))
-    back_button = BackButton(250, 50, intro_text[1], 25, 200)
-    new_button = PlayButton(250, 50, intro_text[2], 25, 280)
+    text_coord = 5
+    for line in intro_text:
+        string_rendered = font.render(line, 2, pygame.Color('black'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 20
+        intro_rect.top = text_coord
+        intro_rect.x = 20
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    back_button = BackButton(250, 50, button_text[0], 25, 200)
+    new_button = PlayButton(250, 50, button_text[1], 25, 280)
     lose_group.draw(screen)
     pygame.display.flip()
     while True:
