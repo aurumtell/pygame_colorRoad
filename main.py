@@ -22,7 +22,6 @@ pygame.display.flip()
 all_sprites = pygame.sprite.Group()
 
 
-
 def load_file(filename):
     filename = "data/" + filename
     f = open(filename, encoding="utf8")
@@ -81,6 +80,7 @@ class BackButton(pygame.sprite.Sprite):
     def check_click(self, mouse):
         if self.rect.collidepoint(mouse):
             return True
+
 
 class NoleButton(pygame.sprite.Sprite):
     def __init__(self, width, height, title, x, y):
