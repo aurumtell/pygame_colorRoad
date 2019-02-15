@@ -399,18 +399,24 @@ def game_screen():
 def lose_screen(points, max_points):
     screen = pygame.display.set_mode(size)
     running = True
-    intro_text = ['Вы проиграли(', 'Ваш рекорд' + ' ' + str(max_points), 'Вы набрали' + ' ' + str(points)]
+    intro_text1 = 'Вы проиграли('
+    intro_text = ['Ваш рекорд' + ' ' + str(max_points), 'Вы набрали' + ' ' + str(points)]
     button_text = ["Меню", 'Играть', 'Новая игра']
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 50)
-    text_coord = 5
+    text_coord = 65
+    font1 = pygame.font.Font('data/STIXGeneralBolIta.ttf', 40)
+    text = font1.render(intro_text1, 1, (200, 0, 0))
+    text_x = 15
+    text_y = 20
+    screen.blit(text, (text_x, text_y))
     for line in intro_text:
         string_rendered = font.render(line, 2, pygame.Color('black'))
         intro_rect = string_rendered.get_rect()
         text_coord += 20
         intro_rect.top = text_coord
-        intro_rect.x = 20
+        intro_rect.x = 17
         text_coord += intro_rect.height
         screen.blit(string_rendered, intro_rect)
     back_button = BackButton(250, 40, button_text[0], 25, 200)
